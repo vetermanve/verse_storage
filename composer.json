@@ -1,0 +1,23 @@
+{
+  "name": "verse/storage",
+  "description": "Simple storage library for Verse Framework",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Denisov Mikhail",
+      "email": "manwebdev@gmail.com"
+    },
+    {
+      "name": "Dlussky Kirill",
+      "email": "kirill@dlussky.ru"
+    }
+  ],
+  "autoload": {
+    "psr-4": {"Verse\\Storage\\": "src/Verse/Storage"}
+  },
+  "require": {
+    "php": ">=7.1",
+    "verse/modular": "^1.0"
+  }
+}
