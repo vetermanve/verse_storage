@@ -1,2 +1,2 @@
-# verse_storage
-Storage is a simple storage library developing for Verse
+# Verse_Storage
+Storage is a simple storage library being developed for Verse
