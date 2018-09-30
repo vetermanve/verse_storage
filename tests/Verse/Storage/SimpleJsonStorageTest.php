@@ -6,6 +6,7 @@ namespace Verse\Storage;
 
 use Verse\Storage\Data\JBaseDataAdapter;
 use Verse\Storage\Example\ExampleStorage;
+use Verse\Storage\Spec\Compare;
 
 class SimpleJsonStorageTest extends \PHPUnit_Framework_TestCase
 {
@@ -172,5 +173,207 @@ class SimpleJsonStorageTest extends \PHPUnit_Framework_TestCase
         $ids = array_column($insertDataItems, 'id');
         $checkDataResult = $storage->read()->mGet($ids, __METHOD__);
         $this->assertEquals($insertDataItems, $checkDataResult, 'get by id error');
+    }
+
+
+    public function testUpdateManyBatchAndReadMget() : void
+    {
+        $storage = $this->getStorage();
+
+        $count = 10;
+
+        $insertDataItems = [];
+
+        while ($count--) {
+            $id = $count . '.' . microtime(1);
+
+            $testData = [
+                'id'   => $id,
+                'test' => microtime(1),
+            ];
+
+            $insertDataItems[$id] = $testData;
+        }
+
+        $writeResult = $storage->write()->insertBatch($insertDataItems, __METHOD__);
+        $this->assertNotEmpty($writeResult);
+
+        $ids = array_column($insertDataItems, 'id');
+        $checkDataResult = $storage->read()->mGet($ids, __METHOD__);
+        $this->assertEquals($insertDataItems, $checkDataResult, 'get by id error');
+        
+        $updateBinds = [];
+        
+        
+        foreach ($insertDataItems as $id => $item) {
+            $checkValue = microtime(1);
+            $updateBinds[$id] = [
+                'updated' => $checkValue
+            ];
+
+            $insertDataItems[$id]['updated'] = $checkValue; 
+        }
+
+        $writeResult = $storage->write()->updateBatch($updateBinds, __METHOD__);
+        foreach ($writeResult as $result) {
+            $this->assertTrue($result);
+        }
+
+        $checkDataResult = $storage->read()->mGet($ids, __METHOD__);
+        $this->assertEquals($insertDataItems, $checkDataResult, 'get by id error');
+    }
+
+    public function testInsertManyUpdateOneByOneAndReadMget() : void
+    {
+        $storage = $this->getStorage();
+
+        $count = 10;
+
+        $insertDataItems = [];
+
+        while ($count--) {
+            $id = $count . '.' . microtime(1);
+
+            $testData = [
+                'id'   => $id,
+                'test' => microtime(1),
+            ];
+
+            $insertDataItems[$id] = $testData;
+        }
+
+        $writeResult = $storage->write()->insertBatch($insertDataItems, __METHOD__);
+        $this->assertNotEmpty($writeResult);
+
+        $ids = array_column($insertDataItems, 'id');
+        $checkDataResult = $storage->read()->mGet($ids, __METHOD__);
+        $this->assertEquals($insertDataItems, $checkDataResult, 'get by id error');
+
+
+        foreach ($insertDataItems as $id => $item) {
+            $checkValue = microtime(1);
+            $updateBind = [
+                'updated' => $checkValue
+            ];
+            
+            $res = $storage->write()->update($id, $updateBind, __METHOD__);
+            $this->assertNotEmpty($res);
+                
+            $insertDataItems[$id]['updated'] = $checkValue;
+        }
+
+        $checkDataResult = $storage->read()->mGet($ids, __METHOD__);
+        $this->assertEquals($insertDataItems, $checkDataResult, 'get by id error');
+    }
+
+    public function testInsertManyAndSearchIdsIn() : void
+    {
+        $storage = $this->getStorage();
+
+        $count = 10;
+
+        $insertDataItems = [];
+
+        while ($count--) {
+            $id = $count . '.' . microtime(1);
+
+            $testData = [
+                'id'   => $id,
+                'test' => microtime(1),
+            ];
+
+            $insertDataItems[$id] = $testData;
+        }
+
+        $writeResult = $storage->write()->insertBatch($insertDataItems, __METHOD__);
+        $this->assertNotEmpty($writeResult);
+
+        $ids = array_column($insertDataItems, 'id');
+        
+        $filter = [
+            ['id', Compare::IN, $ids]
+        ];
+        
+        $checkDataResult = $storage->search()->find($filter, \count($ids), __METHOD__);
+        $this->assertEquals($insertDataItems, $checkDataResult, 'get by id error');
+    }
+
+    public function testInsertManyAndSearchRandomIds() : void
+    {
+        $storage = $this->getStorage();
+
+        $count = 10;
+
+        $insertDataItems = [];
+        
+        $testSearch = [];
+
+        while ($count--) {
+            $id = $count . '.' . microtime(1);
+
+            $testData = [
+                'id'   => $id,
+                'test' => microtime(1),
+            ];
+
+            $insertDataItems[$id] = $testData;
+            
+            if (random_int(0, 1)) {
+                $testSearch[$id] = $testData;
+            }
+        }
+
+        $writeResult = $storage->write()->insertBatch($insertDataItems, __METHOD__);
+        $this->assertNotEmpty($writeResult);
+
+        $ids = array_column($testSearch, 'id');
+
+        $filter = [
+            ['id', Compare::IN, $ids]
+        ];
+
+        $checkDataResult = $storage->search()->find($filter, \count($ids), __METHOD__);
+        $this->assertEquals($testSearch, $checkDataResult, 'random serach by id error');
+    }
+
+    public function testInsertManyAndSearchOneByFindOne() : void
+    {
+        $storage = $this->getStorage();
+
+        $count = 10;
+
+        $insertDataItems = [];
+
+        $testSearch = [];
+
+        while ($count--) {
+            $id = $count . '.' . microtime(1);
+
+            $testData = [
+                'id'   => $id,
+                'test' => microtime(1),
+            ];
+
+            $insertDataItems[$id] = $testData;
+        }
+        
+        $specialItem = [
+            'id' => 'special',
+            'test_special' => microtime(1),
+        ]; 
+            
+        $insertDataItems[$specialItem['id']] = $specialItem;
+
+        $writeResult = $storage->write()->insertBatch($insertDataItems, __METHOD__);
+        $this->assertNotEmpty($writeResult);
+
+        $ids = array_column($testSearch, 'id');
+
+        $filter = [
+            ['id', Compare::IN, [$specialItem['id']]]
+        ];
+
+        $checkDataResult = $storage->search()->findOne($filter, \count($ids), __METHOD__);
+        $this->assertEquals($specialItem, $checkDataResult, 'random serach by id error');
     }
 }

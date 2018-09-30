@@ -84,9 +84,9 @@ class StorageDataRequest
         }
         
         if (!$this->wasFetched) {
-            $this->fetchResult = call_user_func_array(
+            $this->fetchResult = \call_user_func_array(
                 $this->fetchFunction, 
-                is_array($this->sendResult) ? $this->sendResult : [$this->sendResult] 
+                \is_array($this->sendResult) ? $this->sendResult : [$this->sendResult] 
             );
             $this->wasFetched  = true;
         }

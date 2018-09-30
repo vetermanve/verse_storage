@@ -36,10 +36,10 @@ class StorageDependency
     {
         if (!isset($this->modules[$module])) {
             if ($required) {
-                throw new \Exception('Module '.$module.' not supported');
-            } else {
-                return null;
+                throw new \RuntimeException('Module '.$module.' not supported');
             }
+            
+            return null;
         }
         
         if (is_callable($this->modules[$module])) {

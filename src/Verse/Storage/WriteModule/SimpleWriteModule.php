@@ -49,11 +49,13 @@ class SimpleWriteModule extends StorageDataAccessModuleProto implements WriteMod
     
     public function updateBatch($bindsByIds, $callerMethod)
     {
-        $timer = $this->profiler->openTimer(__METHOD__, $bind, $callerMethod);
-        $request = $this->dataAdapter->getUpdateRequest($id, $bind);
+        $timer = $this->profiler->openTimer(__METHOD__, $bindsByIds, $callerMethod);
+        $request = $this->dataAdapter->getBatchUpdateRequest($bindsByIds);
         $request->send();
         $request->fetch();
         $this->profiler->finishTimer($timer);
+        
+        return $request->getResult();
     }
     
     public function remove($id, $callerMethod)

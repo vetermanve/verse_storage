@@ -8,10 +8,6 @@ use Verse\Storage\StorageDataAccessModuleProto;
 
 class SimpleReadModule extends StorageDataAccessModuleProto implements ReadModuleInterface
 {
-    private $idKey = 'id';
-    
-    private $scopeKey;
-    
     public function get($id, $caller, $default = null)
     {
         $t = $this->profiler->openTimer(__METHOD__, $id, $caller);
@@ -38,38 +34,5 @@ class SimpleReadModule extends StorageDataAccessModuleProto implements ReadModul
         $this->profiler->finishTimer($timer);
         
         return $request->hasResult() ? $request->getResult() : $default;
-    }
-    
-    /**
-     * @param mixed $dataAdapter
-     */
-    public function setDataAdapter($dataAdapter)
-    {
-        $this->dataAdapter = $dataAdapter;
-    }
-    
-    /**
-     * @param mixed $scopeKey
-     */
-    public function setScopeKey($scopeKey)
-    {
-        $this->scopeKey = $scopeKey;
-    }
-    
-
-    /**
-     * @return string
-     */
-    public function getIdKey()
-    {
-        return $this->idKey;
-    }
-    
-    /**
-     * @param string $idKey
-     */
-    public function setIdKey($idKey)
-    {
-        $this->idKey = $idKey;
     }
 }
