@@ -16,8 +16,21 @@
   "autoload": {
     "psr-4": {"Verse\\Storage\\": "src/Verse/Storage"}
   },
+  "autoload-dev": {
+    "psr-4": {"Verse\\Storage\\": "tests/Verse/Storage"}
+  },
   "require": {
     "php": ">=7.1",
-    "verse/modular": "^1.0"
+    "verse/modular": "^1.0",
+    "verse/env": "0.0.2",
+    "psr/log": "^1.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^5.7"
+  },
+  "scripts": {
+    "test": [
+      "phpunit"
+    ]
   }
 }

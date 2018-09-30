@@ -4,7 +4,8 @@
 namespace Verse\Storage;
 
 
-use Mu\Env;
+use Psr\Log\LoggerInterface;
+use Verse\Di\Env;
 use Verse\Storage\ReadModule\ReadModuleInterface;
 use Verse\Storage\SearchModule\SearchModuleInterface;
 use Verse\Storage\WriteModule\WriteModuleInterface;
@@ -27,8 +28,7 @@ abstract class StorageProto extends StorageModuleProto
     protected function preConfigure() {
         $this->diContainer->setModule(StorageDependency::PROFILER, function () {
             $profiler = new StorageProfiler();
-            if ($this->profilingAllowed && Env::isProfiling()) {
-                $logger = Env::getLogger();
+            if ($this->profilingAllowed && $logger = Env::getContainer()->bootstrap(LoggerInterface::class, false)) {
                 $profiler->setTimerReportCallback(function ($timer) use ($logger) {
                     $logger->debug('StorageProfiler', $timer);
                 });

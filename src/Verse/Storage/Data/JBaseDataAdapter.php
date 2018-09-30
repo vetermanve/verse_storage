@@ -35,7 +35,9 @@ class JBaseDataAdapter extends DataAdapterProto
         }
         
         if (!file_exists($path)) {
-            mkdir($path, 0774, true);
+            if (!mkdir($path, 0774, true) && !is_dir($path)) {
+                throw new \RuntimeException(sprintf('Table path "%s" was not created', $path));
+            }
             chmod($path, 0774);
         }
         
@@ -68,7 +70,7 @@ class JBaseDataAdapter extends DataAdapterProto
     }
     
     public function getAllItems() {
-        $list = scandir($this->_getTablePath());
+        $list = scandir($this->_getTablePath(), SCANDIR_SORT_NONE);
         return array_diff($list, ['.','..']);
     }
     
@@ -111,9 +113,30 @@ class JBaseDataAdapter extends DataAdapterProto
      *
      * @return StorageDataRequest
      */
-    public function getBatchInsertRequest($insertBindsByKeys)
+    public function getBatchInsertRequest($insertBindsByKeys) : StorageDataRequest
     {
-        // TODO: Implement getBatchInsertRequest() method.
+        $self = $this;
+        $request = new StorageDataRequest(
+            [$insertBindsByKeys],
+            function ($insertBindsByKeys) use ($self) {
+                $results = [];
+                foreach ($insertBindsByKeys as $id => $bind) {
+                    $pointer = $self->getPointer($id, self::ADD_ACCESS);
+                    if (!$pointer) {
+                        $results[$id] = false;
+                    }
+                    
+                    $res = fwrite($pointer, $this->_packData($bind));
+                    $self->closePointer($pointer);
+
+                    $results[$id] = $res ? true : false; 
+                }
+                
+                return $results;
+            }
+        );
+
+        return $request;
     }
     
     /**
@@ -156,7 +179,37 @@ class JBaseDataAdapter extends DataAdapterProto
      */
     public function getBatchUpdateRequest($updateBindsByKeys)
     {
-        // TODO: Implement getBatchUpdateRequest() method.
+        $self = $this;
+        $request = new StorageDataRequest(
+            [$updateBindsByKeys],
+            function ($updateBindsByKeys) use ($self) {
+                $results = [];
+                
+                foreach ($updateBindsByKeys as $id => $bind) {
+                    $pointer = $self->getPointer($id, self::UPDATE_ACCESS);
+                    if (!$pointer) {
+                        $results[$id] = false;
+                    }
+
+                    $record = json_decode(stream_get_contents($pointer), true);
+                    
+                    if (isset($record[self::F_DATA])) {
+                        $bind += $record[self::F_DATA];
+                    }
+                    
+                    ftruncate($pointer, 0);
+                    rewind($pointer);
+                    $res = fwrite($pointer, $this->_packData($bind));
+                    $self->closePointer($pointer);
+                    
+                    $results[$id] = $res ? true : false;
+                }
+
+                return $results;
+            }
+        );
+
+        return $request;
     }
     
     /**
@@ -241,10 +294,10 @@ class JBaseDataAdapter extends DataAdapterProto
                         return $original != $compare;
                     },
                     Compare::EMPTY_OR_EQ     => function ($original, $compare) {
-                        return is_null($original) || $original == $compare;
+                        return $original === null || $original == $compare;
                     },
                     Compare::EMPTY_OR_NOT_EQ => function ($original, $compare) {
-                        return is_null($original) || $original != $compare;
+                        return $original === null || $original != $compare;
                     },
                     Compare::GRATER          => function ($original, $compare) {
                         return $original > $compare;
@@ -354,7 +407,7 @@ class JBaseDataAdapter extends DataAdapterProto
     
             $params[] = &$results;
             
-            call_user_func_array('array_multisort', $params);
+            array_multisort(...$params);
         }
     }
     
