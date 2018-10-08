@@ -288,16 +288,16 @@ class JBaseDataAdapter extends DataAdapterProto
                 
                 $knownFilters = [
                     Compare::EQ              => function ($original, $compare) {
-                        return $original == $compare;
+                        return $original === $compare;
                     },
                     Compare::NOT_EQ          => function ($original, $compare) {
-                        return $original != $compare;
+                        return $original !== $compare;
                     },
                     Compare::EMPTY_OR_EQ     => function ($original, $compare) {
-                        return $original === null || $original == $compare;
+                        return $original === null || $original === $compare;
                     },
                     Compare::EMPTY_OR_NOT_EQ => function ($original, $compare) {
-                        return $original === null || $original != $compare;
+                        return $original === null || $original !== $compare;
                     },
                     Compare::GRATER          => function ($original, $compare) {
                         return $original > $compare;
@@ -312,10 +312,10 @@ class JBaseDataAdapter extends DataAdapterProto
                         return $original <= $compare;
                     },
                     Compare::IN              => function ($original, $compare) {
-                        return in_array($original, $compare);
+                        return \in_array($original, $compare, true);
                     },
                     Compare::ANY             => function ($original, $compare) {
-                        return in_array($compare, $original);
+                        return \in_array($compare, $original, true);
                     },
                     Compare::STR_BEGINS      => function ($original, $compare) {
                         return stripos($original, $compare) === 0;
@@ -329,7 +329,7 @@ class JBaseDataAdapter extends DataAdapterProto
                 $filterRules = [];
                 
                 foreach ($filter as $filterRequest) {
-                    if (count($filterRequest) === 3) {
+                    if (\count($filterRequest) === 3) {
                         list ($key, $compare, $compareValue) = $filterRequest;
                         
                         if (isset($knownFilters[$compare])) {
