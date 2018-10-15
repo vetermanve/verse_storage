@@ -3,7 +3,8 @@
 
 namespace Verse\Storage\Data;
 
-use Mu\Env;
+use Verse\Di\Env;
+use Verse\Router\Router;
 use Verse\Storage\Request\StorageDataRequest;
 
 class RabbitRouterDataAdapter extends DataAdapterProto
@@ -11,11 +12,11 @@ class RabbitRouterDataAdapter extends DataAdapterProto
     private $queueKey = 'address';
     
     /**
-     * @return \Router\Router
+     * @return Router
      */
     public function getRouter () 
     {
-        return Env::getRouter();
+        return Env::getContainer()->bootstrap(Router::class);
     }
     
     /**
@@ -28,9 +29,9 @@ class RabbitRouterDataAdapter extends DataAdapterProto
     {
         $self = $this;
         $primary = $this->primaryKey;
-        
-        return $request = new StorageDataRequest(
-            [$id, $insertBind, $primary], 
+
+        return new StorageDataRequest(
+            [$id, $insertBind, $primary],
             function ($id, $insertBind, $primary) use ($self) {
                 $insertBind[$primary] = $id;
                 $queue = $insertBind[$self->getQueueKey()] ?? $self->getResource();
@@ -49,20 +50,21 @@ class RabbitRouterDataAdapter extends DataAdapterProto
     {
         $self = $this;
         $primary = $this->primaryKey;
-    
-        return $request = new StorageDataRequest(
+
+        return new StorageDataRequest(
             [$insertBindsByKeys, $primary],
             function ($insertBindsByKeys, $primary) use ($self) {
                 $router = $self->getRouter();
                 $queueKey = $self->getQueueKey();
                 $resource = $self->getResource();
-                
+
                 foreach ($insertBindsByKeys as $id => &$bind) {
                     $bind[$primary] = $id;
                     $queue = $bind[$queueKey] ?? $resource;
-                    $router->publish($bind, $queue);    
-                } unset($bind);
-                
+                    $router->publish($bind, $queue);
+                }
+                unset($bind);
+
                 return $insertBindsByKeys;
             }
         );
@@ -77,7 +79,7 @@ class RabbitRouterDataAdapter extends DataAdapterProto
      */
     public function getUpdateRequest($id, $updateBind)
     {
-        throw new \Exception("Not Supported");
+        throw new \RuntimeException('Not Supported');
     }
     
     /**
@@ -88,7 +90,7 @@ class RabbitRouterDataAdapter extends DataAdapterProto
      */
     public function getBatchUpdateRequest($updateBindsByKeys)
     {
-        throw new \Exception("Not Supported");
+        throw new \RuntimeException('Not Supported');
     }
     
     /**
@@ -99,7 +101,7 @@ class RabbitRouterDataAdapter extends DataAdapterProto
      */
     public function getReadRequest($ids)
     {
-        throw new \Exception("Not Supported");
+        throw new \RuntimeException('Not Supported');
     }
     
     /**
@@ -109,7 +111,7 @@ class RabbitRouterDataAdapter extends DataAdapterProto
      */
     public function getDeleteRequest($ids)
     {
-        throw new \Exception("Not Supported");
+        throw new \RuntimeException('Not Supported');
     }
     
     /**
@@ -123,18 +125,18 @@ class RabbitRouterDataAdapter extends DataAdapterProto
     public function getSearchRequest($filter, $limit = 1, $conditions = [])
     {
         $self = $this;
-    
-        return $request = new StorageDataRequest(
+
+        return new StorageDataRequest(
             [$limit, $conditions],
             function ($limit, $conditions) use ($self) {
                 $timeout = $conditions['timeout'] ?? 1;
                 $consumer = $self->getRouter()->getConsumer($self->getResource(), $timeout);
                 $results = [];
-                
+
                 while ($limit--) {
                     $results[] = $consumer->readOne();
                 }
-            
+
                 return $results;
             }
         );
