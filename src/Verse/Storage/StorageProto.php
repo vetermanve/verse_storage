@@ -29,8 +29,9 @@ abstract class StorageProto extends StorageModuleProto
         $this->diContainer->setModule(StorageDependency::PROFILER, function () {
             $profiler = new StorageProfiler();
             if ($this->profilingAllowed && $logger = Env::getContainer()->bootstrap(LoggerInterface::class, false)) {
+                /* @var $logger LoggerInterface */
                 $profiler->setTimerReportCallback(function ($timer) use ($logger) {
-                    $logger->debug('StorageProfiler', $timer);
+                    $logger->debug('StorageProfiler report', $timer);
                 });
             }
             

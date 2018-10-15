@@ -8,10 +8,10 @@ use Verse\Storage\Spec\Compare;
 
 class JBaseDataAdapter extends DataAdapterProto
 {
-    const READ_ACCESS = 'r';
-    const CREATE_ACCESS = 'w';
-    const UPDATE_ACCESS = 'c+';
-    const ADD_ACCESS = 'x';
+    private const READ_ACCESS   = 'r';
+    private const CREATE_ACCESS = 'w';
+    private const UPDATE_ACCESS = 'c+';
+    private const ADD_ACCESS    = 'x';
     
     const F_DATA = 'd';
     const F_TOUCHED = 't';
@@ -26,6 +26,8 @@ class JBaseDataAdapter extends DataAdapterProto
         'asc'  => SORT_ASC,
         'desc' => SORT_DESC,
     ];
+    
+    private $_searchFilters = [];
     
     private function _getTablePath() {
         $di = DIRECTORY_SEPARATOR;
@@ -105,7 +107,7 @@ class JBaseDataAdapter extends DataAdapterProto
             self::F_TOUCHED => microtime(1)
         ];
         
-        return json_encode($bind, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); 
+        return \json_encode($bind, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); 
     }
     
     /**
@@ -280,52 +282,12 @@ class JBaseDataAdapter extends DataAdapterProto
     public function getSearchRequest($filter, $limit = 1, $conditions = [])
     {
         $self = $this;
+        $knownFilters = $this->_getSearchFilters();
         $request = new StorageDataRequest(
             [$filter, $limit, $conditions],
-            function ($filter, $limit, $conditions) use ($self) {
+            function ($filter, $limit, $conditions) use ($self, $knownFilters) {
                 $items = $self->getAllItems();
                 $results = [];
-                
-                $knownFilters = [
-                    Compare::EQ              => function ($original, $compare) {
-                        return $original === $compare;
-                    },
-                    Compare::NOT_EQ          => function ($original, $compare) {
-                        return $original !== $compare;
-                    },
-                    Compare::EMPTY_OR_EQ     => function ($original, $compare) {
-                        return $original === null || $original === $compare;
-                    },
-                    Compare::EMPTY_OR_NOT_EQ => function ($original, $compare) {
-                        return $original === null || $original !== $compare;
-                    },
-                    Compare::GRATER          => function ($original, $compare) {
-                        return $original > $compare;
-                    },
-                    Compare::LESS            => function ($original, $compare) {
-                        return $original > $compare;
-                    },
-                    Compare::GRATER_OR_EQ    => function ($original, $compare) {
-                        return $original >= $compare;
-                    },
-                    Compare::LESS_OR_EQ      => function ($original, $compare) {
-                        return $original <= $compare;
-                    },
-                    Compare::IN              => function ($original, $compare) {
-                        return \in_array($original, $compare, true);
-                    },
-                    Compare::ANY             => function ($original, $compare) {
-                        return \in_array($compare, $original, true);
-                    },
-                    Compare::STR_BEGINS      => function ($original, $compare) {
-                        return stripos($original, $compare) === 0;
-                    },
-                    Compare::STR_ENDS        => function ($original, $compare) {
-                        $length = strlen($compare);
-                        return $length === 0 || (substr($original, -$length) === $compare);
-                    }
-                ];
-    
                 $filterRules = [];
                 
                 foreach ($filter as $filterRequest) {
@@ -383,6 +345,52 @@ class JBaseDataAdapter extends DataAdapterProto
         return $request;
     }
     
+    
+    private function _getSearchFilters() {
+        if (!$this->_searchFilters) {
+            $this->_searchFilters = [
+                Compare::EQ              => function ($original, $compare) {
+                    return $original === $compare;
+                },
+                Compare::NOT_EQ          => function ($original, $compare) {
+                    return $original !== $compare;
+                },
+                Compare::EMPTY_OR_EQ     => function ($original, $compare) {
+                    return $original === null || $original === $compare;
+                },
+                Compare::EMPTY_OR_NOT_EQ => function ($original, $compare) {
+                    return $original === null || $original !== $compare;
+                },
+                Compare::GRATER          => function ($original, $compare) {
+                    return $original > $compare;
+                },
+                Compare::LESS            => function ($original, $compare) {
+                    return $original > $compare;
+                },
+                Compare::GRATER_OR_EQ    => function ($original, $compare) {
+                    return $original >= $compare;
+                },
+                Compare::LESS_OR_EQ      => function ($original, $compare) {
+                    return $original <= $compare;
+                },
+                Compare::IN              => function ($original, $compare) {
+                    return \in_array($original, $compare, true);
+                },
+                Compare::ANY             => function ($original, $compare) {
+                    return \in_array($compare, $original, true);
+                },
+                Compare::STR_BEGINS      => function ($original, $compare) {
+                    return stripos($original, $compare) === 0;
+                },
+                Compare::STR_ENDS        => function ($original, $compare) {
+                    $length = strlen($compare);
+                    return $length === 0 || (substr($original, -$length) === $compare);
+                }
+            ];
+        }
+        
+        return $this->_searchFilters;
+    }
     
     public function applyConditions (&$results, $conditions) 
     {

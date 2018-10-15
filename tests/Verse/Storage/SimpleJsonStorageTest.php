@@ -32,7 +32,7 @@ class SimpleJsonStorageTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         parent::setUp(); 
-        $this->testDataDir = __DIR__.'/data';
+        $this->testDataDir = __DIR__.'/jbase';
         if (file_exists($this->testDataDir)) {
             self::clearDir($this->testDataDir);    
         }
