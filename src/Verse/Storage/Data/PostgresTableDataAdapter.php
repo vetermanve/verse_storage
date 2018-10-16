@@ -11,6 +11,7 @@ use Verse\Storage\Spec\Compare;
 
 class PostgresTableDataAdapter extends DataAdapterProto
 {
+    private const CONNECTION_STATE_OK = 'Connection OK';
     /**
      * @var \PDO
      */
@@ -68,7 +69,9 @@ class PostgresTableDataAdapter extends DataAdapterProto
     private function _getConnection()
     {
         if ($this->_connection) {
-            return $this->_connection;
+            if (strpos($this->_connection->getAttribute(PDO::ATTR_CONNECTION_STATUS), self::CONNECTION_STATE_OK) !== false) {
+                return $this->_connection;    
+            }
         }
 
         try {
