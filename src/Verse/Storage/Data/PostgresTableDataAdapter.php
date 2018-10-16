@@ -72,7 +72,9 @@ class PostgresTableDataAdapter extends DataAdapterProto
         }
 
         try {
-            $this->_connection = new PDO($this->resource);
+            $this->_connection = new PDO($this->resource, null, null, [
+                PDO::ATTR_PERSISTENT => true 
+            ]);
         } catch (\PDOException $e) {
             $this->logError('Cannot connect to database: ' . __METHOD__);
         }
@@ -661,7 +663,13 @@ class PostgresTableDataAdapter extends DataAdapterProto
     public function clearTable()
     {
         $db = $this->_getConnection();
-        return $db->exec('TRUNCATE ' . $this->getTable());
+        return $db && $db->exec('TRUNCATE ' . $this->getTable());
+    }
+
+    public function executeQuery($query)
+    {
+        $db = $this->_getConnection();
+        return $db && $db->exec($query);
     }
 
     /**

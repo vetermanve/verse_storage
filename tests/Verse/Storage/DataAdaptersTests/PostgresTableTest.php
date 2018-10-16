@@ -27,6 +27,66 @@ class PostgresTableTest extends TestCase
         });
     }
 
+    public static function setUpBeforeClass()
+    {
+        parent::setUpBeforeClass();
+        
+        $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
+        $dbUser = $_ENV['DB_USER'] ?? 'vetermanve';
+        $dbPassword = $_ENV['DB_PASSWORD'] ?? null;
+        
+        
+        $adapter = new PostgresTableDataAdapter();
+        $adapter->setResource("pgsql:host=$dbHost;user=$dbUser;password=$dbPassword;dbname=postgres");
+        $adapter->executeQuery('CREATE DATABASE storage_tests');
+        unset($adapter);
+        
+        $adapter = new PostgresTableDataAdapter();
+        $adapter->setResource("pgsql:host=$dbHost;user=$dbUser;password=$dbPassword;dbname=storage_tests");
+        $adapter->executeQuery('
+            drop table if exists table_complex_constraint;
+            create table if not exists  table_complex_constraint
+            (
+              value integer,
+              type  integer,
+              id    integer,
+              constraint table_complex_constraint_pk
+              unique (id, type)
+            );
+            
+            alter table table_complex_constraint
+              owner to '.$dbUser.';
+        ');
+
+        $adapter->executeQuery('
+            drop table if exists test;
+            create table if not exists test
+            (
+              a  integer,
+              b  varchar(100),
+              c  text,
+              id serial not null
+            );
+            
+            alter table test
+              owner to '.$dbUser.';
+        ');
+        
+        $adapter->executeQuery('
+            drop table if exists test_constraint;
+            create table if not exists test_constraint
+            (
+              id    integer not null
+                constraint test_constraint_pkey
+                primary key,
+              value integer
+            );
+            
+            alter table test_constraint
+              owner to '.$dbUser.';
+       ');
+    }
+
     public function testInsertRequest()
     {
         $adapter = new PostgresTableDataAdapter();
