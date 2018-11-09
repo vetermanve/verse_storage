@@ -469,7 +469,7 @@ class PostgresTableDataAdapter extends DataAdapterProto
                 $filtersWhereArray = $this->_prepapreFilters($filter);
                 
                 $query = 'SELECT * FROM ' . $table
-                    . ' WHERE (' . implode(' ) AND (', $filtersWhereArray) . ')'
+                    . $filtersWhereArray ? ' WHERE (' . implode(' ) AND (', $filtersWhereArray) . ')' : ''
                     . ' LIMIT '.$limit;
 
                 $stmnt = $db->query($query);
