@@ -31,18 +31,18 @@ class PostgresTableTest extends TestCase
     {
         parent::setUpBeforeClass();
         
-        $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
-        $dbUser = $_ENV['DB_USER'] ?? 'vetermanve';
-        $dbPassword = $_ENV['DB_PASSWORD'] ?? null;
-        
-        
+        $dbHost = $_ENV['POSTGRES_HOST'] ?? 'localhost';
+        $dbUser = $_ENV['POSTGRES_USER'] ?? 'vetermanve';
+        $dbName = $_ENV['POSTGRES_DB'] ?? 'storage_tests';
+        $dbPassword = $_ENV['POSTGRES_PASSWORD'] ?? null;
+
         $adapter = new PostgresTableDataAdapter();
         $adapter->setResource("pgsql:host=$dbHost;user=$dbUser;password=$dbPassword;dbname=postgres");
-        $adapter->executeQuery('CREATE DATABASE storage_tests');
+        $adapter->executeQuery('CREATE DATABASE '.$dbName);
         unset($adapter);
         
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource("pgsql:host=$dbHost;user=$dbUser;password=$dbPassword;dbname=storage_tests");
+        $adapter->setResource("pgsql:host=$dbHost;user=$dbUser;password=$dbPassword;dbname=$dbName");
         $adapter->executeQuery('
             drop table if exists table_complex_constraint;
             create table if not exists  table_complex_constraint
@@ -90,7 +90,7 @@ class PostgresTableTest extends TestCase
     public function testInsertRequest()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test');
         $adapter->clearTable();
 
@@ -110,7 +110,7 @@ class PostgresTableTest extends TestCase
     public function testInsertBatchRequest()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test');
         $adapter->clearTable();
 
@@ -146,7 +146,7 @@ class PostgresTableTest extends TestCase
     public function testInsertRequestWithConstrintDoNothing()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setConstraintHints([
             'test_constraint_pkey' => 'NOTHING',
@@ -177,7 +177,7 @@ class PostgresTableTest extends TestCase
     public function testInsertRequestWithConstrintDoUpdate()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setConstraintHints([
             'test_constraint_pkey' => 'UPDATE SET value = t.value + EXCLUDED.value',
@@ -213,7 +213,7 @@ class PostgresTableTest extends TestCase
     public function testInsertBatchDoUpadateOnConstraintConflictRequest()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('table_complex_constraint');
         $adapter->setPrimaryKey('id, type');
         $adapter->setConstraintHints([
@@ -275,7 +275,7 @@ class PostgresTableTest extends TestCase
     public function testUpdateRequest () 
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('table_complex_constraint');
         $adapter->setPrimaryKey('id, type');
         $adapter->setConstraintHints([
@@ -303,7 +303,7 @@ class PostgresTableTest extends TestCase
     public function testReadComplexPrimaryRequest()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('table_complex_constraint');
         $adapter->setPrimaryKey('id, type');
         $adapter->setConstraintHints([
@@ -352,7 +352,7 @@ class PostgresTableTest extends TestCase
     public function testReadSimplePrimaryRequest()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -385,7 +385,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequestEQ () 
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -426,7 +426,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequestNOTEQ ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -469,7 +469,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequestNotEqOrEmpty ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -512,7 +512,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequestEqOrEmpty ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -557,7 +557,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequestIn ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -603,7 +603,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequestDoubleInIntersect ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -651,7 +651,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequestDoubleInNotIntersect ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -697,7 +697,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequesEmptyIn ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test_constraint');
         $adapter->setPrimaryKey('id');
         $adapter->clearTable();
@@ -744,7 +744,7 @@ class PostgresTableTest extends TestCase
     public function testSearchRequesStrings ()
     {
         $adapter = new PostgresTableDataAdapter();
-        $adapter->setResource('pgsql:host=localhost;user=vetermanve;dbname=storage_tests');
+        $adapter->setResource('pgsql:host=database;user=postgres;password=postgres;dbname=tests');
         $adapter->setTable('test');
         $adapter->clearTable();
         

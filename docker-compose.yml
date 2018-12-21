@@ -1,0 +1,38 @@
+version: '2'
+
+services:
+
+  app:
+    build:
+      context: .docker/php
+      args:
+        PUID: "1000"
+        # PHP_INSTALL_XDEBUG: "false"
+        # INSTALL_GIT: "true"
+        # PHP_XDEBUG_PORT: "9000"
+    volumes:
+    - ./:/var/www
+    links:
+      - database
+    environment:
+    - "POSTGRES_HOST=database"
+    - "POSTGRES_USER=postgres"
+    - "POSTGRES_PASSWORD=postgres"
+    - "POSTGRES_DB=tests"
+    - "PHP_IDE_CONFIG=serverName=localhost"
+    user: www-data
+
+#pgsql:host=database;user=postgres;dbname=tests
+  database:
+    image: postgres:10-alpine
+    environment:
+    - "POSTGRES_DB=tests"
+    - "POSTGRES_USER=postgres"
+    - "POSTGRES_PASSWORD=postgres"
+    ports:
+    - "5432:5432"
+
+#  redis:
+#    image: redis:4.0.2
+#    ports:
+#    - "6379:6379"
