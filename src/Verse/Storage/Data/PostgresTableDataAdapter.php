@@ -11,7 +11,7 @@ use Verse\Storage\Spec\Compare;
 
 class PostgresTableDataAdapter extends DataAdapterProto
 {
-    private const CONNECTION_STATE_OK = 'Connection OK';
+    protected const CONNECTION_STATE_OK = 'Connection OK';
     /**
      * @var \PDO
      */
@@ -42,7 +42,7 @@ class PostgresTableDataAdapter extends DataAdapterProto
         }
     }
 
-    private function _getPrimaryKetArray() : array
+    protected function _getPrimaryKetArray() : array
     {
         if ($this->primaryKeyArray !== null) {
             return $this->primaryKeyArray;
@@ -66,7 +66,7 @@ class PostgresTableDataAdapter extends DataAdapterProto
     /**
      * @return \PDO|null
      */
-    private function _getConnection()
+    protected function _getConnection()
     {
         if ($this->_connection) {
             if (strpos($this->_connection->getAttribute(PDO::ATTR_CONNECTION_STATUS), self::CONNECTION_STATE_OK) !== false) {
