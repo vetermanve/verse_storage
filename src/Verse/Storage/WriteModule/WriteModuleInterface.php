@@ -13,4 +13,5 @@ interface WriteModuleInterface
     public function update ($id, $bind, $callerMethod);
     public function insertBatch($bindsByIds, $callerMethod);
     public function updateBatch($bindsByIds, $callerMethod);
+    public function removeBatch($ids, $callerMethod);
 }

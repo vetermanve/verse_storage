@@ -9,6 +9,7 @@ use Verse\Storage\StorageDataAccessModuleProto;
 class SimpleWriteModule extends StorageDataAccessModuleProto implements WriteModuleInterface
 {
     /**
+     * @param $id
      * @param $bind
      * @param $callerMethod
      *
@@ -66,6 +67,17 @@ class SimpleWriteModule extends StorageDataAccessModuleProto implements WriteMod
         $request->fetch();
         $this->profiler->finishTimer($timer);
     
+        return $request->getResult();
+    }
+
+    public function removeBatch($ids, $callerMethod)
+    {
+        $timer = $this->profiler->openTimer(__METHOD__, '', $callerMethod);
+        $request = $this->dataAdapter->getDeleteRequest($ids);
+        $request->send();
+        $request->fetch();
+        $this->profiler->finishTimer($timer);
+
         return $request->getResult();
     }
 }
