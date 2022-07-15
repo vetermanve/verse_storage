@@ -7,8 +7,9 @@ namespace Verse\Storage;
 use Verse\Storage\Data\JBaseDataAdapter;
 use Verse\Storage\Example\ExampleStorage;
 use Verse\Storage\Spec\Compare;
+use PHPUnit\Framework\TestCase;
 
-class SimpleJsonStorageTest extends \PHPUnit_Framework_TestCase
+class SimpleJsonStorageTest extends TestCase
 {
     protected $testDataDir;
     
@@ -29,7 +30,7 @@ class SimpleJsonStorageTest extends \PHPUnit_Framework_TestCase
         }
     }
     
-    protected function setUp()
+    protected function setUp() : void
     {
         parent::setUp(); 
         $this->testDataDir = __DIR__.'/jbase';

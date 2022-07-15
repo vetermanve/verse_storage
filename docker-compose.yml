@@ -30,7 +30,16 @@ services:
     - "POSTGRES_USER=postgres"
     - "POSTGRES_PASSWORD=postgres"
     ports:
-    - "5432:5432"
+      - "5432:5432"
+
+  redis:
+    image: library/redis:6
+#    environment:
+#      - "POSTGRES_DB=tests"
+#      - "POSTGRES_USER=postgres"
+#      - "POSTGRES_PASSWORD=postgres"
+    ports:
+      - "16379:6379"
 
 #  redis:
 #    image: redis:4.0.2

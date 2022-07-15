@@ -1,6 +1,7 @@
-FROM php:7.2
+FROM php:7.4
 RUN apt-get update && apt-get install -y libpq-dev bash wget zip unzip && docker-php-ext-install pdo pdo_pgsql
 ADD . /var/www
+WORKDIR /var/www
 
 # Installing Composer
 RUN printf "\nInstalling Composer\n\n"; \
@@ -15,9 +16,6 @@ RUN printf "\nInstalling Composer\n\n"; \
       php composer-setup.php --install-dir=/usr/local/bin --filename=composer; \
     fi; \
     rm composer-setup.php
-
-RUN composer global require "hirak/prestissimo" && \
-    rm -rf /root/.composer/cache
 
 #
 #--------------------------------------------------------------------------

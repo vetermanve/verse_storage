@@ -23,7 +23,7 @@
     "php": ">=7.1",
     "verse/modular": "^1.0",
     "verse/env": "0.0.2",
-    "psr/log": "^1.0",
+    "psr/log": "^1.0.1 || ^2.0 || ^3.0",
     "ext-json" : "*"
   },
   "suggest": {
@@ -33,9 +33,9 @@
     "ext-pdo_pgsql" : "For using postgres data adapters"
   },
   "require-dev": {
-    "phpunit/phpunit": "^5.7",
-    "kmelia/monolog-stdout-handler": "^1.2",
+    "phpunit/phpunit": "*",
     "verse/router" : "*",
+    "monolog/monolog" : "^2.7",
     "ext-pdo" : "*",
     "ext-pdo_pgsql" : "*"
   },
