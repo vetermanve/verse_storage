@@ -4,9 +4,10 @@
 namespace Verse\Storage\Data;
 
 
-use Mu\Cache\Redis;
-use Mu\Env;
+use Verse\Storage\Connector\Redis;
+use Verse\Di\Env;
 use Verse\Storage\Request\StorageDataRequest;
+use Verse\Storage\Util\Uuid;
 
 class RedisCacheDataAdapter extends DataAdapterProto
 {
@@ -20,7 +21,19 @@ class RedisCacheDataAdapter extends DataAdapterProto
     private $prefix = 'storageCache';
     
     private $ttl = self::DEFAULT_TTL;
-    
+
+    private array $primaryKeyParts = ['id'];
+
+    public function setPrimaryKey($primaryKey) : void
+    {
+        $this->primaryKeyParts = [];
+        foreach (explode(',', $primaryKey) as $item) {
+            $this->primaryKey[] = trim($item);
+        }
+
+        parent::setPrimaryKey($primaryKey);
+    }
+
     /**
      * RedisCacheDataAdapter constructor.
      *
@@ -35,12 +48,13 @@ class RedisCacheDataAdapter extends DataAdapterProto
     
     private function getRedis () 
     {
-        !$this->redis && $this->redis = Env::getRedis();
+        !$this->redis && $this->redis = Env::getContainer()->bootstrap(Redis::class);
         
         return $this->redis;
     }
-    
+
     /**
+     * @param $id string|array
      * @param $insertBind
      *
      * @return StorageDataRequest
@@ -49,13 +63,30 @@ class RedisCacheDataAdapter extends DataAdapterProto
     {
         return new StorageDataRequest(
             [
-                $this->getRedis(), 
-                $this->ttl, 
+                $this->getRedis(),
+                $this->ttl,
+                $this->prefix,
+                $this->primaryKeyParts,
                 $this->getKey($id), 
                 $insertBind
             ],
-            function (Redis $redis, $ttl, $id, $insertBind) {
-                return $redis->set($id, \json_encode($insertBind), $ttl);
+            function (Redis $redis, $ttl, $prefix, $primaryKeyParts, $key, $insertBind) {
+                $result = $redis->setnx($prefix.':'. $key, \json_encode($insertBind), $ttl);
+
+                if ($result) {
+                    if (count($primaryKeyParts) > 1) {
+                        $keyParts = explode(':', $key);
+                        if (count($primaryKeyParts) === count($keyParts)) {
+                            return array_combine($primaryKeyParts, $keyParts) + $insertBind;
+                        } else {
+                            throw new \Exception("Count of primary key parts not equals count of key parts");
+                        }
+                    } else {
+                        return [$primaryKeyParts[0] => $key] + $insertBind;
+                    }
+                }
+
+                return $result;
             }
         );
     }
@@ -69,17 +100,25 @@ class RedisCacheDataAdapter extends DataAdapterProto
     {
         $writeData = [];
         foreach ($insertBindsByKeys as $key => $bind) {
-            $writeData[$this->getKey($key)] = \json_encode($bind);
+            $writeData[$this->getKey($key)] = $bind;
         }
         
         return new StorageDataRequest(
             [
                 $this->getRedis(),
                 $this->ttl,
+                $this->prefix,
                 $writeData,
             ],
-            function (Redis $redis, $ttl, $writeData) {
-                return $redis->mset($writeData, $ttl);
+            function (Redis $redis, $ttl, $prefix, $writeData) {
+                $result = [];
+
+                foreach ($writeData as $key => $record) {
+                    $res = $redis->setnx($prefix.':'.$key, \json_encode($record), $ttl);
+                    $result[$key] = $res ? [$this->primaryKey => $key] + $record : false;
+                }
+
+                return $result;
             }
         );
     }
@@ -92,7 +131,34 @@ class RedisCacheDataAdapter extends DataAdapterProto
      */
     public function getUpdateRequest($id, $updateBind)
     {
-        return $this->getInsertRequest($id, $updateBind);
+        return new StorageDataRequest(
+            [
+                $this->getRedis(),
+                $this->ttl,
+                $this->prefix,
+                $this->primaryKeyParts,
+                $this->getKey($id),
+                $updateBind
+            ],
+            function (Redis $redis, $ttl, $prefix, $primaryKeyParts, $key, $insertBind) {
+                $result = $redis->set($prefix.':'. $key, \json_encode($insertBind), $ttl);
+
+                if ($result) {
+                    if (count($primaryKeyParts) > 1) {
+                        $keyParts = explode(':', $key);
+                        if (count($primaryKeyParts) === count($keyParts)) {
+                            return array_combine($primaryKeyParts, $keyParts) + $insertBind;
+                        } else {
+                            throw new \Exception("Count of primary key parts not equals count of key parts");
+                        }
+                    } else {
+                        return [$primaryKeyParts[0] => $key] + $insertBind;
+                    }
+                }
+
+                return $result;
+            }
+        );
     }
     
     /**
@@ -148,23 +214,34 @@ class RedisCacheDataAdapter extends DataAdapterProto
      */
     public function getReadRequest($ids)
     {
-        $ids = array_unique(array_filter($ids));
+//        $ids = array_unique(array_filter($ids));
         return new StorageDataRequest(
             [
                 $this->getRedis(),
                 $this->getKeys($ids, false),
-                 $this->prefix
+                $this->prefix,
+                $this->primaryKeyParts
             ],
-            function (Redis $redis, $ids, $prefix) {
+            function (Redis $redis, $ids, $prefix, $primaryKeyParts) {
                 $resultPacked = $redis->mget($ids);
                 $results = [];
                 $prefixLen = strlen($prefix) + 1;
                 
-                foreach (array_filter($resultPacked) as $key => $packedData) {
+                foreach (array_filter($resultPacked) as $keyWithPrefix => $packedData) {
                     $data = \json_decode($packedData, 1);
-                    
+
                     if ($data) {
-                        $results[substr($key, $prefixLen)] = $data;
+                        $key = substr($keyWithPrefix, $prefixLen);
+                        if (count($primaryKeyParts) > 1) {
+                            $keyParts = explode(':', $key);
+                            if (count($primaryKeyParts) === count($keyParts)) {
+                                $results[$key] = array_combine($primaryKeyParts, $keyParts) + $data;
+                            } else {
+                                throw new \Exception("Count of primary key parts not equals count of key parts");
+                            }
+                        } else {
+                            $results[$key] = [$primaryKeyParts[0] => $key] + $data;
+                        }
                     }
                 }
                 
@@ -173,16 +250,25 @@ class RedisCacheDataAdapter extends DataAdapterProto
         );
     }
     
-    private function getKey ($id) 
+    private function getKey ($id) : string
     {
-        return $this->prefix.':'.$id;
+        if (!is_array($id)) {
+            return $id ? $id : Uuid::v4();
+        }
+
+        foreach ($id as &$keyPart) {
+            $keyPart = $keyPart ?? Uuid::v4();
+        }
+
+        return implode(':', $id);
     }
     
     private function getKeys ($ids, $presentKeys = true) 
     {
         $keys = [];
         foreach ($ids as $id) {
-            $keys[$id] = $this->prefix.':'.$id;
+            $key = $this->getKey($id);
+            $keys[$key] = $this->prefix.':'.$key;
         }
         return $presentKeys ? $keys : array_values($keys);
     }
