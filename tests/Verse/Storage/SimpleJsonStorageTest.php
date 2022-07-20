@@ -62,7 +62,7 @@ class SimpleJsonStorageTest extends TestCase
     {
         $storage = $this->getStorage();
         
-        $id = microtime(1);
+        $id = (string)microtime(1);
         
         $testData = [
             'id' => $id,
@@ -80,7 +80,7 @@ class SimpleJsonStorageTest extends TestCase
     {
         $storage = $this->getStorage();
 
-        $id = microtime(1);
+        $id = (string)microtime(1);
 
         $testData = [
             'id' => $id,

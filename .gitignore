@@ -2,3 +2,4 @@
 /vendor
 jbase/
 composer.lock
+.phpunit.result.cache
